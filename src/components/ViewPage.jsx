@@ -2,14 +2,32 @@ import React, { useState } from "react";
 import Tools from "./Tools";
 import FolderTree from "./FolderTree";
 import Preview from "./Preview";
-import logo from '../assets/IGlogo.png'
+import PolygonList from "./PolygonList";
+import logo from '../assets/IGlogo.png';
 
 const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [currentTool, setCurrentTool] = useState('marker');
+  const [polygons, setPolygons] = useState({});
+  const [selectedPolygon, setSelectedPolygon] = useState(null);
 
   const handleProcessPolygons = (processedPolygons) => {
     console.log('Processed Polygons:', processedPolygons);
+    setPolygons(prevPolygons => ({
+      ...prevPolygons,
+      [selectedFile]: processedPolygons
+    }));
+  };
+
+  const handleUpdatePolygons = (updatedPolygons) => {
+    setPolygons(prevPolygons => ({
+      ...prevPolygons,
+      ...updatedPolygons
+    }));
+  };
+
+  const handlePolygonClick = (polygon) => {
+    setSelectedPolygon(polygon);
   };
 
   return (
@@ -39,6 +57,12 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           selectedFile={selectedFile} 
           currentTool={currentTool}
           onProcessPolygons={handleProcessPolygons}
+          onUpdatePolygons={handleUpdatePolygons} // Pass the handler
+          selectedPolygon={selectedPolygon} // Pass the selected polygon
+        />
+        <PolygonList 
+          polygons={Object.values(polygons).flat()} 
+          onPolygonClick={handlePolygonClick} // Pass the handler
         />
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { PenTool, Eraser, MousePointer } from "lucide-react";
+import { PenTool, Eraser, MousePointer, Move } from "lucide-react"; // Import Move icon
 
 const Tools = ({ 
   currentTool, 
@@ -20,6 +20,11 @@ const Tools = ({
       icon: Eraser, 
       name: 'eraser',
       tooltip: 'Delete Points'
+    },
+    { 
+      icon: Move, 
+      name: 'move',
+      tooltip: 'Move Polygon'
     }
   ];
 

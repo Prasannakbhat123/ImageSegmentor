@@ -11,11 +11,27 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const [polygons, setPolygons] = useState({});
   const [selectedPolygon, setSelectedPolygon] = useState(null);
 
+  const handleFileSelect = (fileUrl, filePath) => {
+    setSelectedFile({
+      url: fileUrl,
+      path: filePath
+    });
+    
+    // Initialize polygons for this file if not already done
+    if (!polygons[fileUrl]) {
+      setPolygons(prev => ({
+        ...prev,
+        [fileUrl]: []
+      }));
+    }
+  };
+
   const handleProcessPolygons = (processedPolygons) => {
-    console.log('Processed Polygons:', processedPolygons);
+    if (!selectedFile) return;
+    
     setPolygons(prevPolygons => ({
       ...prevPolygons,
-      [selectedFile]: processedPolygons
+      [selectedFile.url]: processedPolygons
     }));
   };
 
@@ -27,7 +43,17 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   };
 
   const handlePolygonClick = (polygon) => {
-    setSelectedPolygon({ ...polygon, file: selectedFile });
+    setSelectedPolygon(polygon);
+  };
+
+  // Get all polygons as a flat array for the polygon list
+  const getAllPolygons = () => {
+    return Object.entries(polygons).flatMap(([fileUrl, filePolygons]) => 
+      filePolygons.map(polygon => ({
+        ...polygon,
+        fileUrl
+      }))
+    );
   };
 
   return (
@@ -51,18 +77,19 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
         />
         <FolderTree 
           files={uploadedFiles} 
-          onFileSelect={(fileUrl) => setSelectedFile(fileUrl)}
+          onFileSelect={handleFileSelect}
         />
         <Preview 
-          selectedFile={selectedFile} 
+          selectedFile={selectedFile?.url} 
           currentTool={currentTool}
           onProcessPolygons={handleProcessPolygons}
-          onUpdatePolygons={handleUpdatePolygons} // Pass the handler
-          selectedPolygon={selectedPolygon} // Pass the selected polygon
+          onUpdatePolygons={handleUpdatePolygons}
+          selectedPolygon={selectedPolygon}
+          polygons={selectedFile ? polygons[selectedFile.url] || [] : []}
         />
         <PolygonList 
-          polygons={Object.values(polygons).flat()} 
-          onPolygonClick={handlePolygonClick} // Pass the handler
+          polygons={getAllPolygons()} 
+          onPolygonClick={handlePolygonClick}
         />
       </div>
     </div>

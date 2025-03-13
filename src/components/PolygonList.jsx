@@ -1,5 +1,3 @@
-import React from "react";
-
 const PolygonList = ({ polygons, onPolygonClick }) => {
   return (
     <div className="w-1/4 bg-gray-100 p-4 h-full overflow-y-auto shadow-lg">

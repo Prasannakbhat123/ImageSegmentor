@@ -103,6 +103,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
     }
   };
 
+  // Modified handleDoneUploading to always pass the root files object
   const handleDoneUploading = () => {
     setUploadedFiles(files);
     setViewMode(true);
@@ -149,7 +150,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
   };
 
   return (
-    <div className="p-6 mt-24 rounded-lg shadow-lg w-[55vw] mx-auto">
+    <div className="p-6 rounded-lg shadow-lg w-[70vw] mx-auto">
       <h1 className="text-3xl font-bold text-blue-800 text-center mb-7">
         Image & Folder Uploader
       </h1>
@@ -181,7 +182,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
       {breadcrumbs.length > 0 && (
         <div className="mb-4">
           <button
-            className="text-blue-700 underline font-semibold"
+            className="text-blue-700 bg-transparent underline font-semibold"
             onClick={navigateToParentFolder}
           >
             ⬅ Back to Parent
@@ -197,7 +198,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
         <div className="flex justify-center mt-4">
           <button 
             onClick={handleDoneUploading}
-            className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition"
+            className="bg-transparent border-blue-950 text-blue-950 px-6 py-2 rounded-md hover:bg-blue-200 "
           >
             Done
           </button>

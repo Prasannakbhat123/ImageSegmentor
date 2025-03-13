@@ -1,6 +1,6 @@
 const HomeSection = () => {
   return (
-    <div className="text-center h-[20%] pt-80">
+    <div className="text-center h-[20%] pt-80 mb-40">
       <h2 className="text-5xl font-bold text-black">
         Welcome to the Image Segmenter Tool!
       </h2>

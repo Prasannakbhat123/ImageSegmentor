@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Navbar from "./components/Navbar";
 import HomeSection from "./components/HomeSection";
 import PictureUploader from "./components/PictureUploader";
@@ -10,6 +10,18 @@ import homebg from "./assets/homebg.jpg";
 const App = () => {
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [viewMode, setViewMode] = useState(false);
+
+  const handleSetViewMode = (value) => {
+    // Ensure we're actually changing the view mode
+    console.log("Setting view mode to:", value);
+    setViewMode(value);
+  };
+
+  const handleSetUploadedFiles = (files) => {
+    // Ensure we're actually setting the files
+    console.log("Setting uploaded files:", files);
+    setUploadedFiles(files);
+  };
 
   return (
     <div
@@ -26,8 +38,8 @@ const App = () => {
               className="w-screen h-[65vh] flex items-center flex-col space-y-8"
             >
               <PictureUploader
-                setUploadedFiles={setUploadedFiles}
-                setViewMode={setViewMode}
+                setUploadedFiles={handleSetUploadedFiles}
+                setViewMode={handleSetViewMode}
               />
             </section>
 
@@ -42,7 +54,10 @@ const App = () => {
             <Footer />
           </>
         ) : (
-          <ViewPage uploadedFiles={uploadedFiles} setViewMode={setViewMode} />
+          <ViewPage 
+            uploadedFiles={uploadedFiles} 
+            setViewMode={handleSetViewMode} 
+          />
         )}
       </div>
     </div>

@@ -159,6 +159,8 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     });
 
     ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 100, 255, 0.3)';
+    ctx.fill();
     ctx.stroke();
 
     scaledPoints.forEach((point) => {
@@ -167,6 +169,23 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
       ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
       ctx.fill();
     });
+
+    // Draw label and group
+    if (polygon.name) {
+      const firstPoint = scaledPoints[0];
+      ctx.font = '12px Arial';
+      ctx.fillStyle = 'white';
+      const textWidth = ctx.measureText(`${polygon.name} (${polygon.group})`).width;
+      const padding = 4;
+      const rectWidth = textWidth + padding * 2;
+      const rectHeight = 20;
+
+      ctx.fillStyle = 'rgba(0, 100, 255, 0.7)';
+      ctx.fillRect(firstPoint.x, firstPoint.y - rectHeight - 5, rectWidth, rectHeight);
+
+      ctx.fillStyle = 'white';
+      ctx.fillText(`${polygon.name} (${polygon.group})`, firstPoint.x + padding, firstPoint.y - 10);
+    }
   };
 
   const reorderPoints = (points) => {
@@ -283,7 +302,7 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
 
           if (distance < nearestDistance) {
             nearestDistance = distance;
-            nearestPointIndex = pointIndex;
+            nearestIndex = pointIndex;
           }
         }
 
@@ -313,8 +332,11 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
   useEffect(() => {
     if (selectedFile) {
       redrawCanvas(selectedFile);
+      if (selectedPolygon) {
+        redrawSelectedPolygon(selectedPolygon);
+      }
     }
-  }, [currentPolygon, polygons, selectedFile]);
+  }, [currentPolygon, polygons, selectedFile, selectedPolygon]);
 
   const handleMouseMove = (e) => {
     const canvas = canvasRef.current;

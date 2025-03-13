@@ -27,7 +27,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   };
 
   const handlePolygonClick = (polygon) => {
-    setSelectedPolygon(polygon);
+    setSelectedPolygon({ ...polygon, file: selectedFile });
   };
 
   return (

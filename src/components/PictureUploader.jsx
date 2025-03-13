@@ -149,7 +149,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
   };
 
   return (
-    <div className="p-6 bg-[#f2f2f2] rounded-lg shadow-lg w-[55vw] mx-auto">
+    <div className="p-6 mt-24 rounded-lg shadow-lg w-[55vw] mx-auto">
       <h1 className="text-3xl font-bold text-blue-800 text-center mb-7">
         Image & Folder Uploader
       </h1>

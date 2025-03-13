@@ -36,36 +36,44 @@ const Faq = () => {
   ];
 
   return (
-    <div className="w-screen mx-auto p-6 bg-blue-100 rounded-lg shadow-lg relative overflow-hidden h-full flex flex-col justify-center">
-      <h2 className="text-2xl font-bold text-center mb-6 text-blue-600">Frequently Asked Questions</h2>
+    <div className="w-screen mx-auto p-6 pt-60 rounded-lg  relative overflow-hidden flex flex-col justify-center">
+      <h2 className="text-2xl font-bold text-center mb-6 text-blue-900">
+        Frequently Asked Questions
+      </h2>
 
       {/* FAQ List */}
-      <div className="space-y-4 max-h-[400px] overflow-auto">
-        {faqs.map((faq, index) => (
-          <div key={index} className="border rounded-lg p-4 bg-white">
-            <button
-              className="w-full text-left font-semibold flex justify-between items-center"
-              onClick={() => toggleFAQ(index)}
-            >
-              {faq.question}
-              <span className="text-xl">{openIndex === index ? "−" : "+"}</span>
-            </button>
-            {openIndex === index && (
-              <p className="mt-2 text-gray-700">{faq.answer}</p>
-            )}
-          </div>
-        ))}
+      <div className="flex justify-center">
+        <div className="space-y-4 w-[80vw]">
+          {faqs.map((faq, index) => (
+            <div key={index} className="border rounded-lg p-4">
+              <button
+                className="w-full text-center text-blue-950 font-semibold flex justify-between bg-transparent items-center"
+                onClick={() => toggleFAQ(index)}
+              >
+                {faq.question}
+                <span className="text-xl">
+                  {openIndex === index ? "−" : "+"}
+                </span>
+              </button>
+              {openIndex === index && (
+                <p className="mt-2 text-gray-700">{faq.answer}</p>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* How to Use Section */}
-      <div className="mt-8 p-4 bg-white rounded-lg shadow-md">
-        <h3 className="text-xl font-bold mb-3">How to Use the Tool?</h3>
+      <div className="mt-8 mb-10 w-[80vw] p-4 rounded-lg ">
+        <h3 className="text-2xl text-blue-950 font-bold mb-3">
+          How to Use the Tool?
+        </h3>
         <ol className="list-decimal pl-5 space-y-2 text-gray-700">
-          <li>Upload an image by clicking on the "Upload" button.</li>
+          <li>Upload an image by clicking on the &quot;Upload&quot; button.</li>
           <li>The tool will process the image and highlight objects.</li>
           <li>Use the settings panel to refine the segmentation as needed.</li>
           <li>Preview the segmented image before downloading.</li>
-          <li>Click "Download" to save the segmented image.</li>
+          <li>Click &quot;Download&quot; to save the segmented image.</li>
         </ol>
       </div>
     </div>

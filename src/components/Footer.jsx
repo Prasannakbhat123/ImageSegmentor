@@ -1,4 +1,3 @@
-import React from 'react';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -11,14 +10,14 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 
 const Footer = () => {
   return (
-    <footer className="bg-[#104384] text-white py-3">
+    <footer className=" text-blue-900 py-3 mt-40">
       <Container>
         <Grid container alignItems="center" justifyContent="space-between">
           <Grid item xs={12} sm={6} className="text-center sm:text-left">
             <h3 className="font-bold text-2xl">
               ImageSegmentation
             </h3>
-            <Typography variant="body2" className="text-gray-100 mt-1">
+            <Typography variant="body2" className="text-blue-900 mt-1">
               A place to remove whatever you want from your pictures in a single click.
             </Typography>
           </Grid>
@@ -37,7 +36,7 @@ const Footer = () => {
                 <LinkedInIcon />
               </IconButton>
             </div>
-            <Typography variant="body2" className="text-gray-100">
+            <Typography variant="body2" className="text-blue-900">
               &copy; {new Date().getFullYear()} ImageSegmentation. All rights reserved.
             </Typography>
           </Grid>

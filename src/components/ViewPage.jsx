@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Tools from "./Tools";
 import FolderTree from "./FolderTree";
 import Preview from "./Preview";
@@ -16,6 +16,9 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
       url: fileUrl,
       path: filePath
     });
+    
+    // Clear selected polygon when changing files
+    setSelectedPolygon(null);
     
     // Initialize polygons for this file if not already done
     if (!polygons[fileUrl]) {
@@ -43,7 +46,13 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   };
 
   const handlePolygonClick = (polygon) => {
-    setSelectedPolygon(polygon);
+    // Toggle selection - if clicking the same polygon, deselect it
+    if (selectedPolygon && selectedPolygon.name === polygon.name && 
+        selectedPolygon.fileUrl === polygon.fileUrl) {
+      setSelectedPolygon(null);
+    } else {
+      setSelectedPolygon(polygon);
+    }
   };
 
   // Get all polygons as a flat array for the polygon list
@@ -85,11 +94,12 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           onProcessPolygons={handleProcessPolygons}
           onUpdatePolygons={handleUpdatePolygons}
           selectedPolygon={selectedPolygon}
-          polygons={selectedFile ? polygons[selectedFile.url] || [] : []}
+          setSelectedPolygon={setSelectedPolygon}
         />
         <PolygonList 
           polygons={getAllPolygons()} 
           onPolygonClick={handlePolygonClick}
+          selectedPolygon={selectedPolygon}
         />
       </div>
     </div>

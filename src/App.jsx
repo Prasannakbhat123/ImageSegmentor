@@ -35,7 +35,7 @@ const App = () => {
             <HomeSection />
             <section
               id="try"
-              className="w-screen h-[65vh] flex items-center flex-col space-y-8"
+              className="w-screen h-[65vh] flex items-center flex-col space-y-8 overflow-auto"
             >
               <PictureUploader
                 setUploadedFiles={handleSetUploadedFiles}

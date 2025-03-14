@@ -4,6 +4,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
   const [files, setFiles] = useState({});
   const [currentFolder, setCurrentFolder] = useState(files);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
+  const [currentPath, setCurrentPath] = useState([]);
 
   const handleFileUpload = (event) => {
     const uploadedFiles = Array.from(event.target.files);
@@ -14,43 +15,107 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
       url: URL.createObjectURL(file),
     }));
 
-    setFiles((prev) => {
-      const updatedFiles = {
-        ...prev,
-        ...Object.fromEntries(newFiles.map((f) => [f.name, f])),
-      };
-      setCurrentFolder(updatedFiles);
-      return updatedFiles;
-    });
+    if (breadcrumbs.length === 0) {
+      // Adding files to root
+      setFiles((prev) => {
+        const updatedFiles = {
+          ...prev,
+          ...Object.fromEntries(newFiles.map((f) => [f.name, f])),
+        };
+        setCurrentFolder(updatedFiles);
+        return updatedFiles;
+      });
+    } else {
+      // Adding files to a subfolder
+      setFiles((prev) => {
+        const updatedFiles = { ...prev };
+        let target = updatedFiles;
+        
+        // Navigate to the current folder in the overall structure
+        for (const folder of breadcrumbs) {
+          target = target[folder].contents;
+        }
+        
+        // Add the new files to the current folder
+        newFiles.forEach((f) => {
+          target[f.name] = f;
+        });
+        
+        // Update the current folder view
+        setCurrentFolder(target);
+        
+        return updatedFiles;
+      });
+    }
   };
 
   const handleFolderUpload = (event) => {
     const uploadedFiles = Array.from(event.target.files);
-    const folderStructure = { ...files };
-
-    uploadedFiles.forEach((file) => {
-      const path = file.webkitRelativePath.split("/");
-      let current = folderStructure;
-
-      for (let i = 0; i < path.length; i++) {
-        if (i === path.length - 1) {
-          current[path[i]] = {
-            name: path[i],
-            type: "file",
-            file,
-            url: URL.createObjectURL(file),
-          };
-        } else {
-          if (!current[path[i]]) {
-            current[path[i]] = { name: path[i], type: "folder", contents: {} };
-          }
-          current = current[path[i]].contents;
-        }
+    let folderStructure = { ...files };
+    
+    // If we're in a subfolder, we need to add the files to that folder
+    if (breadcrumbs.length > 0) {
+      let target = folderStructure;
+      
+      // Navigate to the current folder
+      for (const folder of breadcrumbs) {
+        target = target[folder].contents;
       }
-    });
+      
+      // Process files
+      uploadedFiles.forEach((file) => {
+        const path = file.webkitRelativePath.split("/");
+        let current = target;
+        
+        for (let i = 0; i < path.length; i++) {
+          if (i === path.length - 1) {
+            current[path[i]] = {
+              name: path[i],
+              type: "file",
+              file,
+              url: URL.createObjectURL(file),
+            };
+          } else {
+            if (!current[path[i]]) {
+              current[path[i]] = { name: path[i], type: "folder", contents: {} };
+            }
+            current = current[path[i]].contents;
+          }
+        }
+      });
+    } else {
+      // Adding to root (original behavior)
+      uploadedFiles.forEach((file) => {
+        const path = file.webkitRelativePath.split("/");
+        let current = folderStructure;
+
+        for (let i = 0; i < path.length; i++) {
+          if (i === path.length - 1) {
+            current[path[i]] = {
+              name: path[i],
+              type: "file",
+              file,
+              url: URL.createObjectURL(file),
+            };
+          } else {
+            if (!current[path[i]]) {
+              current[path[i]] = { name: path[i], type: "folder", contents: {} };
+            }
+            current = current[path[i]].contents;
+          }
+        }
+      });
+    }
 
     setFiles(folderStructure);
-    setCurrentFolder(folderStructure);
+    
+    // Update current folder view based on breadcrumbs
+    let updatedCurrentFolder = folderStructure;
+    for (const folder of breadcrumbs) {
+      updatedCurrentFolder = updatedCurrentFolder[folder].contents;
+    }
+    
+    setCurrentFolder(updatedCurrentFolder);
   };
 
   const removeItem = (itemName, isFolder) => {
@@ -68,24 +133,72 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
       return updatedObj;
     };
 
-    setFiles(prevFiles => removeItemRecursive(prevFiles));
-    setCurrentFolder(prevFolder => removeItemRecursive(prevFolder));
-
-    const revokeUrls = (obj) => {
-      Object.values(obj).forEach(item => {
-        if (item.type === 'file' && item.url) {
-          URL.revokeObjectURL(item.url);
-        }
-        if (item.type === 'folder' && item.contents) {
-          revokeUrls(item.contents);
-        }
-      });
-    };
-    revokeUrls({ [itemName]: files[itemName] });
-
-    if (breadcrumbs.includes(itemName)) {
-      setCurrentFolder(files);
-      setBreadcrumbs([]);
+    // If we're at root level
+    if (breadcrumbs.length === 0) {
+      const updatedFiles = { ...files };
+      
+      // If the item is a file, revoke its URL
+      if (files[itemName] && files[itemName].type === 'file' && files[itemName].url) {
+        URL.revokeObjectURL(files[itemName].url);
+      }
+      
+      // If the item is a folder, revoke URLs of all files inside
+      if (files[itemName] && files[itemName].type === 'folder') {
+        const revokeUrls = (obj) => {
+          Object.values(obj).forEach(item => {
+            if (item.type === 'file' && item.url) {
+              URL.revokeObjectURL(item.url);
+            }
+            if (item.type === 'folder' && item.contents) {
+              revokeUrls(item.contents);
+            }
+          });
+        };
+        
+        revokeUrls(files[itemName].contents);
+      }
+      
+      delete updatedFiles[itemName];
+      setFiles(updatedFiles);
+      setCurrentFolder(updatedFiles);
+    } else {
+      // We're in a subfolder
+      const updatedFiles = { ...files };
+      let current = updatedFiles;
+      
+      // Navigate to parent folder of the current folder
+      for (let i = 0; i < breadcrumbs.length - 1; i++) {
+        current = current[breadcrumbs[i]].contents;
+      }
+      
+      // Last breadcrumb is the current folder
+      const parentFolder = current;
+      current = current[breadcrumbs[breadcrumbs.length - 1]].contents;
+      
+      // If the item is a file, revoke its URL
+      if (current[itemName] && current[itemName].type === 'file' && current[itemName].url) {
+        URL.revokeObjectURL(current[itemName].url);
+      }
+      
+      // If the item is a folder, revoke URLs of all files inside
+      if (current[itemName] && current[itemName].type === 'folder') {
+        const revokeUrls = (obj) => {
+          Object.values(obj).forEach(item => {
+            if (item.type === 'file' && item.url) {
+              URL.revokeObjectURL(item.url);
+            }
+            if (item.type === 'folder' && item.contents) {
+              revokeUrls(item.contents);
+            }
+          });
+        };
+        
+        revokeUrls(current[itemName].contents);
+      }
+      
+      delete current[itemName];
+      setFiles(updatedFiles);
+      setCurrentFolder(current);
     }
   };
 
@@ -103,8 +216,19 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
     }
   };
 
-  // Modified handleDoneUploading to always pass the root files object
+  const navigateToRoot = () => {
+    setCurrentFolder(files);
+    setBreadcrumbs([]);
+  };
+
+  // Updated to include navigation back to root before submitting
   const handleDoneUploading = () => {
+    // If we're in a subfolder, first navigate back to root
+    if (breadcrumbs.length > 0) {
+      navigateToRoot();
+    }
+    
+    console.log("Done uploading with files:", files);
     setUploadedFiles(files);
     setViewMode(true);
   };
@@ -150,7 +274,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
   };
 
   return (
-    <div className="p-6 rounded-lg shadow-lg w-[70vw] mx-auto">
+    <div className="p-6 rounded-lg shadow-lg w-[70vw] mx-auto overflow-auto">
       <h1 className="text-3xl font-bold text-blue-800 text-center mb-7">
         Image & Folder Uploader
       </h1>
@@ -163,6 +287,7 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
             multiple 
             onChange={handleFileUpload} 
             className="hidden" 
+            accept="image/*"
           />
         </label>
 
@@ -180,13 +305,22 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
       </div>
 
       {breadcrumbs.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-4 flex items-center">
           <button
-            className="text-blue-700 bg-transparent underline font-semibold"
+            className="text-blue-700 bg-transparent underline font-semibold mr-2"
             onClick={navigateToParentFolder}
           >
             ⬅ Back to Parent
           </button>
+          <button
+            className="text-blue-700 bg-transparent underline font-semibold"
+            onClick={navigateToRoot}
+          >
+            🏠 Back to Root
+          </button>
+          <span className="ml-2 text-gray-600">
+            Current path: / {breadcrumbs.join(" / ")}
+          </span>
         </div>
       )}
 
@@ -198,9 +332,9 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
         <div className="flex justify-center mt-4">
           <button 
             onClick={handleDoneUploading}
-            className="bg-transparent border-blue-950 text-blue-950 px-6 py-2 rounded-md hover:bg-blue-200 "
+            className="bg-transparent border border-blue-950 text-blue-950 px-6 py-2 rounded-md hover:bg-blue-200"
           >
-            Done
+            {breadcrumbs.length > 0 ? "Done (Return to Root & Submit All Files)" : "Done"}
           </button>
         </div>
       )}

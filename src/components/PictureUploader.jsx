@@ -274,7 +274,11 @@ const PictureUploader = ({ setUploadedFiles, setViewMode }) => {
   };
 
   return (
+<<<<<<< HEAD
     <div className="p-6 rounded-lg shadow-lg w-[70vw] mx-auto overflow-auto">
+=======
+    <div className="p-6 rounded-lg shadow-lg w-[70vw] mx-auto ">
+>>>>>>> 7783c82216d3828c0b09205a9f18f25c5d36f822
       <h1 className="text-3xl font-bold text-blue-800 text-center mb-7">
         Image & Folder Uploader
       </h1>

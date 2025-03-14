@@ -36,7 +36,7 @@ const Faq = () => {
   ];
 
   return (
-    <div className="w-screen mx-auto p-6 pt-60 rounded-lg  relative overflow-hidden flex flex-col justify-center">
+    <div className="w-screen mx-auto p-6 pt-10 mt-40 rounded-lg  relative overflow-hidden flex flex-col justify-center">
       <h2 className="text-2xl font-bold text-center mb-6 text-blue-900">
         Frequently Asked Questions
       </h2>

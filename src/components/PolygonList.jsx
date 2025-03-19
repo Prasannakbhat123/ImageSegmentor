@@ -5,7 +5,7 @@ const PolygonList = ({ polygons, onPolygonClick }) => {
       {polygons.length > 0 ? (
         polygons.map((polygon, index) => (
           <div 
-            key={index} 
+            key={`${polygon.name}-${polygon.fileUrl}`} 
             className="mb-4 p-2 bg-white shadow-md rounded-md cursor-pointer"
             onClick={() => onPolygonClick(polygon)} // Handle click event
           >

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 
-const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygons, selectedPolygon, setSelectedPolygon }) => {
+const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygons, selectedPolygon, setSelectedPolygon, onPolygonSelection,selectedPolygons }) => {
   const [polygons, setPolygons] = useState({});
   const [currentPolygon, setCurrentPolygon] = useState([]);
   const [selectedPointIndex, setSelectedPointIndex] = useState(null);
@@ -16,6 +16,7 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const previousFileRef = useRef(null);
+  // const [selectedPolygons, setSelectedPolygons] = useState([]);
 
   // Predefined shape names for dropdown
   const predefinedShapes = ["Rectangle", "Triangle", "Circle", "Hexagon", "Star", "Arrow", "Custom"];
@@ -47,6 +48,8 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
         // Only draw the image without polygons when changing files
         drawImageOnly();
       };
+      redrawCanvas(selectedFile);
+      processPolygons();
     }
   }, [selectedFile, setSelectedPolygon]);
 
@@ -97,6 +100,13 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     const scaleY = canvas.height / img.naturalHeight;
 
     const currentPolygons = polygons[file] || [];
+    const selectedPolygonsForFile = selectedPolygons.filter(p => p.fileUrl === file);
+
+
+    console.log("Current Polygons:", currentPolygons);
+  console.log("Selected Polygons for File:", selectedPolygonsForFile);
+
+    // Draw all polygons for the current file
     currentPolygons.forEach((polygon, index) => {
       ctx.beginPath();
 
@@ -105,15 +115,15 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
         y: point.y * scaleY
       }));
 
-      // Highlight hovered polygon when move tool is active
-      if (currentTool === 'move' && index === hoveredPolygonIndex) {
-        ctx.fillStyle = 'rgba(255, 165, 0, 0.3)'; // Orange highlight for hovered polygon
-        ctx.strokeStyle = 'rgba(255, 165, 0, 0.7)';
+      // Highlight selected polygon
+      if (selectedPolygonsForFile.find(p => p.name === polygon.name)) {
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
       } else {
-        ctx.fillStyle = 'rgba(0, 100, 255, 0.3)';
         ctx.strokeStyle = 'rgba(0, 100, 255, 0.7)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
       }
-      
+
       ctx.lineWidth = 2;
 
       scaledPoints.forEach((point, index) => {
@@ -153,6 +163,58 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
       }
     });
 
+    // Draw selected polygons that are not part of the current polygons array
+      // Draw selected polygons that are not part of the current polygons array
+  selectedPolygonsForFile.forEach((polygon) => {
+    if (!currentPolygons.find(p => p.name === polygon.name)) {
+      const scaledPoints = polygon.points.map(point => ({
+        x: point.x * scaleX,
+        y: point.y * scaleY
+      }));
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+      ctx.lineWidth = 2;
+
+      scaledPoints.forEach((point, index) => {
+        if (index === 0) {
+          ctx.moveTo(point.x, point.y);
+        } else {
+          ctx.lineTo(point.x, point.y);
+        }
+      });
+
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+      ctx.fill();
+      ctx.stroke();
+
+      scaledPoints.forEach((point) => {
+        ctx.beginPath();
+        ctx.fillStyle = 'blue';
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Draw label and group
+      if (polygon.name) {
+        const firstPoint = scaledPoints[0];
+        ctx.font = '12px Arial';
+        ctx.fillStyle = 'white';
+        const textWidth = ctx.measureText(`${polygon.name} (${polygon.group})`).width;
+        const padding = 4;
+        const rectWidth = textWidth + padding * 2;
+        const rectHeight = 20;
+
+        ctx.fillStyle = 'rgba(0, 100, 255, 0.7)';
+        ctx.fillRect(firstPoint.x, firstPoint.y - rectHeight - 5, rectWidth, rectHeight);
+
+        ctx.fillStyle = 'white';
+        ctx.fillText(`${polygon.name} (${polygon.group})`, firstPoint.x + padding, firstPoint.y - 10);
+      }
+    }
+  });
+
     if (currentPolygon.length > 0) {
       ctx.beginPath();
       const scaledCurrentPolygon = currentPolygon.map(point => ({
@@ -181,6 +243,21 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
       ctx.stroke();
     }
   };
+
+  useEffect(() => {
+    if (selectedFile) {
+      console.log("Selected File:", selectedFile);
+      if (selectedPolygons.length > 0) {
+        console.log("Redrawing canvas with selected polygons.");
+        redrawCanvas(selectedFile);
+      } else {
+        console.log("Drawing image only.");
+        drawImageOnly();
+      }
+    }
+  }, [selectedPolygons, selectedFile]);
+  
+
   const redrawSelectedPolygon = (polygon) => {
     const canvas = canvasRef.current;
     if (!canvas || !polygon) return;
@@ -453,6 +530,11 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
       setPolygons(newPolygons);
       onUpdatePolygons(newPolygons);
     }
+  };
+
+  const handlePolygonSelection = (polygon) => {
+    onPolygonSelection(polygon);
+    redrawCanvas(selectedFile);
   };
 
   const handleMouseMove = (e) => {

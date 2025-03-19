@@ -10,6 +10,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const [currentTool, setCurrentTool] = useState('marker');
   const [polygons, setPolygons] = useState({});
   const [selectedPolygon, setSelectedPolygon] = useState(null);
+  const [selectedPolygons, setSelectedPolygons] = useState([]);
 
   const handleFileSelect = (fileUrl, filePath) => {
     setSelectedFile({
@@ -46,13 +47,31 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   };
 
   const handlePolygonClick = (polygon) => {
-    // Toggle selection - if clicking the same polygon, deselect it
-    if (selectedPolygon && selectedPolygon.name === polygon.name && 
-        selectedPolygon.fileUrl === polygon.fileUrl) {
-      setSelectedPolygon(null);
+    const updatedPolygon = { ...polygon, fileUrl: selectedFile?.url };
+    const existingPolygons = [...selectedPolygons];
+    const index = existingPolygons.findIndex(p => p.name === updatedPolygon.name && p.fileUrl === updatedPolygon.fileUrl);
+  
+    if (index !== -1) {
+      existingPolygons.splice(index, 1);
     } else {
-      setSelectedPolygon(polygon);
+      existingPolygons.push(updatedPolygon);
     }
+  
+    setSelectedPolygons(existingPolygons);
+  };
+  
+
+  
+  const handlePolygonSelection = (polygon) => {
+    if (!selectedFile) return;
+  
+    const newPolygons = {
+      ...polygons,
+      [selectedFile.url]: [...(polygons[selectedFile.url] || []), polygon]
+    };
+  
+    setPolygons(newPolygons);
+    handleUpdatePolygons(newPolygons);
   };
 
   // Get all polygons as a flat array for the polygon list
@@ -95,11 +114,12 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           onUpdatePolygons={handleUpdatePolygons}
           selectedPolygon={selectedPolygon}
           setSelectedPolygon={setSelectedPolygon}
+          onPolygonSelection={handlePolygonSelection}
+          selectedPolygons={selectedPolygons} // Ensure this prop is passed
         />
-        <PolygonList 
+       <PolygonList 
           polygons={getAllPolygons()} 
           onPolygonClick={handlePolygonClick}
-          selectedPolygon={selectedPolygon}
         />
       </div>
     </div>

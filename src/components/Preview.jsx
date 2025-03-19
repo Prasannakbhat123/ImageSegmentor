@@ -47,23 +47,27 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
 
         // Only draw the image without polygons when changing files
         drawImageOnly();
+        // processPolygons();
+        redrawCanvas(selectedFile);
       };
-      redrawCanvas(selectedFile);
-      processPolygons();
+
+      img.src = selectedFile;
     }
   }, [selectedFile, setSelectedPolygon]);
 
   useEffect(() => {
     if (selectedFile) {
-      if (selectedPolygon) {
-        redrawCanvas(selectedFile);
-        redrawSelectedPolygon(selectedPolygon);
-      } else {
-        // If no polygon is selected, just draw the image
-        drawImageOnly();
-      }
+      const currentPolygons = polygons[selectedFile?.url] || [];
+      const processedPolygons = currentPolygons.map(polygon => ({
+        name: polygon.name,
+        group: polygon.group,
+        points: polygon.points.map(point => [point.x, point.y])
+      }));
+  
+      // console.log("Processed Polygons for Current Image preview:", JSON.stringify(processedPolygons, null, 2));
     }
-  }, [selectedPolygon, selectedFile]);
+  }, [selectedFile, polygons]);
+  
 
   useEffect(() => {
     if (selectedFile) {
@@ -103,8 +107,8 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     const selectedPolygonsForFile = selectedPolygons.filter(p => p.fileUrl === file);
 
 
-    console.log("Current Polygons:", currentPolygons);
-  console.log("Selected Polygons for File:", selectedPolygonsForFile);
+  //   console.log("Current Polygons:", currentPolygons);
+  // console.log("Selected Polygons for File:", selectedPolygonsForFile);
 
     // Draw all polygons for the current file
     currentPolygons.forEach((polygon, index) => {
@@ -246,12 +250,12 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
 
   useEffect(() => {
     if (selectedFile) {
-      console.log("Selected File:", selectedFile);
+      // console.log("Selected File:", selectedFile);
       if (selectedPolygons.length > 0) {
-        console.log("Redrawing canvas with selected polygons.");
+        // console.log("Redrawing canvas with selected polygons.");
         redrawCanvas(selectedFile);
       } else {
-        console.log("Drawing image only.");
+        // console.log("Drawing image only.");
         drawImageOnly();
       }
     }

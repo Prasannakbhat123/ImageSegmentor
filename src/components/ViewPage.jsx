@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Tools from "./Tools";
 import FolderTree from "./FolderTree";
 import Preview from "./Preview";
@@ -17,10 +17,10 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
       url: fileUrl,
       path: filePath
     });
-    
+
     // Clear selected polygon when changing files
     setSelectedPolygon(null);
-    
+
     // Initialize polygons for this file if not already done
     if (!polygons[fileUrl]) {
       setPolygons(prev => ({
@@ -32,7 +32,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
 
   const handleProcessPolygons = (processedPolygons) => {
     if (!selectedFile) return;
-    
+
     setPolygons(prevPolygons => ({
       ...prevPolygons,
       [selectedFile.url]: processedPolygons
@@ -48,35 +48,40 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
 
   const handlePolygonClick = (polygon) => {
     const updatedPolygon = { ...polygon, fileUrl: selectedFile?.url };
-    const existingPolygons = [...selectedPolygons];
-    const index = existingPolygons.findIndex(p => p.name === updatedPolygon.name && p.fileUrl === updatedPolygon.fileUrl);
-  
-    if (index !== -1) {
-      existingPolygons.splice(index, 1);
-    } else {
-      existingPolygons.push(updatedPolygon);
-    }
-  
-    setSelectedPolygons(existingPolygons);
-  };
-  
+    const currentPolygons = polygons[selectedFile?.url] || [];
 
-  
-  const handlePolygonSelection = (polygon) => {
-    if (!selectedFile) return;
-  
-    const newPolygons = {
-      ...polygons,
-      [selectedFile.url]: [...(polygons[selectedFile.url] || []), polygon]
-    };
-  
-    setPolygons(newPolygons);
-    handleUpdatePolygons(newPolygons);
+    // Check if the polygon already exists in the current image's array
+    const index = currentPolygons.findIndex(p => p.name === updatedPolygon.name);
+
+    if (index === -1) {
+      // Add the polygon to the current image's array
+      const newPolygons = {
+        ...polygons,
+        [selectedFile?.url]: [...currentPolygons, updatedPolygon]
+      };
+
+      console.log("Updated Polygons for Current Image:", JSON.stringify(newPolygons[selectedFile?.url], null, 2));
+      setPolygons(newPolygons);
+      setSelectedPolygons(prev => [...prev, updatedPolygon]);
+    }
   };
+
+  useEffect(() => {
+    if (selectedFile) {
+      const currentPolygons = polygons[selectedFile?.url] || [];
+      const processedPolygons = currentPolygons.map(polygon => ({
+        name: polygon.name,
+        group: polygon.group,
+        points: polygon.points.map(point => [point.x, point.y])
+      }));
+
+      console.log("Processed Polygons for Current Image:", JSON.stringify(processedPolygons, null, 2));
+    }
+  }, [selectedFile, polygons]);
 
   // Get all polygons as a flat array for the polygon list
   const getAllPolygons = () => {
-    return Object.entries(polygons).flatMap(([fileUrl, filePolygons]) => 
+    return Object.entries(polygons).flatMap(([fileUrl, filePolygons]) =>
       filePolygons.map(polygon => ({
         ...polygon,
         fileUrl
@@ -114,7 +119,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           onUpdatePolygons={handleUpdatePolygons}
           selectedPolygon={selectedPolygon}
           setSelectedPolygon={setSelectedPolygon}
-          onPolygonSelection={handlePolygonSelection}
+          onPolygonSelection={handleProcessPolygons}
           selectedPolygons={selectedPolygons} // Ensure this prop is passed
         />
        <PolygonList 

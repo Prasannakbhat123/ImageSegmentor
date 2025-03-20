@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Tools from "./Tools";
 import FolderTree from "./FolderTree";
 import Preview from "./Preview";
@@ -47,25 +47,30 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   };
 
   const handlePolygonClick = (polygon) => {
-    const updatedPolygon = { ...polygon, fileUrl: selectedFile?.url };
+    console.log("Clicked Polygon:", polygon);
+
     const currentPolygons = polygons[selectedFile?.url] || [];
+    const index = currentPolygons.findIndex(p => p.name === polygon.name);
 
-    // Check if the polygon already exists in the current image's array
-    const index = currentPolygons.findIndex(p => p.name === updatedPolygon.name);
-
+    // Check if the polygon is already in the current polygons list
     if (index === -1) {
-      // Add the polygon to the current image's array
+      console.log("Adding Polygon to Current Image's List:", polygon);
       const newPolygons = {
         ...polygons,
-        [selectedFile?.url]: [...currentPolygons, updatedPolygon]
+        [selectedFile?.url]: [...currentPolygons, polygon]
       };
 
-      console.log("Updated Polygons for Current Image:", JSON.stringify(newPolygons[selectedFile?.url], null, 2));
       setPolygons(newPolygons);
-      setSelectedPolygons(prev => [...prev, updatedPolygon]);
     }
-  };
 
+    // Check if the polygon is already selected
+    const isAlreadySelected = selectedPolygons.some(p => p.name === polygon.name && p.fileUrl === selectedFile?.url);
+    if (!isAlreadySelected) {
+      console.log("Selecting Polygon:", polygon);
+      setSelectedPolygons(prev => [...prev, { ...polygon, fileUrl: selectedFile?.url }]);
+    }
+    setSelectedPolygon(polygon); // Ensure this polygon is selected
+};
   useEffect(() => {
     if (selectedFile) {
       const currentPolygons = polygons[selectedFile?.url] || [];
@@ -81,13 +86,20 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
 
   // Get all polygons as a flat array for the polygon list
   const getAllPolygons = () => {
-    return Object.entries(polygons).flatMap(([fileUrl, filePolygons]) =>
+    const allPolygons = Object.entries(polygons).flatMap(([fileUrl, filePolygons]) =>
       filePolygons.map(polygon => ({
         ...polygon,
         fileUrl
       }))
     );
-  };
+
+    // Remove duplicates
+    const uniquePolygons = allPolygons.filter((polygon, index, self) =>
+      index === self.findIndex(p => p.name === polygon.name)
+    );
+
+    return uniquePolygons;
+};
 
   return (
     <div className="relative flex flex-col h-screen">
@@ -120,7 +132,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           selectedPolygon={selectedPolygon}
           setSelectedPolygon={setSelectedPolygon}
           onPolygonSelection={handleProcessPolygons}
-          selectedPolygons={selectedPolygons} // Ensure this prop is passed
+          selectedPolygons={selectedPolygons} 
         />
        <PolygonList 
           polygons={getAllPolygons()} 

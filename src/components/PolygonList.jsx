@@ -1,4 +1,5 @@
 const PolygonList = ({ polygons, onPolygonClick }) => {
+  console.log("Rendering Polygons in List:", polygons);
   return (
     <div className="w-1/4 bg-gray-100 p-4 h-full overflow-y-auto shadow-lg">
       <h2 className="text-xl font-bold mb-4 text-center text-black">Polygons</h2>

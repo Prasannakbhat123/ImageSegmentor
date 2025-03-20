@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 
-const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygons, selectedPolygon, setSelectedPolygon, onPolygonSelection,selectedPolygons }) => {
+const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygons, selectedPolygon, setSelectedPolygon, onPolygonSelection, selectedPolygons, onRedrawCanvas  }) => {
   const [polygons, setPolygons] = useState({});
   const [currentPolygon, setCurrentPolygon] = useState([]);
   const [selectedPointIndex, setSelectedPointIndex] = useState(null);
@@ -79,6 +79,7 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
       }
     }
   }, [currentPolygon, polygons, selectedFile, selectedPolygon]);
+  
   const drawImageOnly = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -91,6 +92,7 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
   };
 
   const redrawCanvas = (file) => {
+    console.log("Redrawing Canvas for File:", file);
     const canvas = canvasRef.current;
     if (!canvas) return;
     
@@ -112,6 +114,7 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
 
     // Draw all polygons for the current file
     currentPolygons.forEach((polygon, index) => {
+      console.log("Drawing Polygon:", polygon.name);
       ctx.beginPath();
 
       const scaledPoints = polygon.points.map(point => ({
@@ -168,8 +171,8 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     });
 
     // Draw selected polygons that are not part of the current polygons array
-      // Draw selected polygons that are not part of the current polygons array
   selectedPolygonsForFile.forEach((polygon) => {
+    console.log("Drawing Selected Polygon:", polygon.name);
     if (!currentPolygons.find(p => p.name === polygon.name)) {
       const scaledPoints = polygon.points.map(point => ({
         x: point.x * scaleX,
@@ -248,19 +251,6 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     }
   };
 
-  useEffect(() => {
-    if (selectedFile) {
-      // console.log("Selected File:", selectedFile);
-      if (selectedPolygons.length > 0) {
-        // console.log("Redrawing canvas with selected polygons.");
-        redrawCanvas(selectedFile);
-      } else {
-        // console.log("Drawing image only.");
-        drawImageOnly();
-      }
-    }
-  }, [selectedPolygons, selectedFile]);
-  
 
   const redrawSelectedPolygon = (polygon) => {
     const canvas = canvasRef.current;

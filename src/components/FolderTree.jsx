@@ -19,7 +19,7 @@ const FolderTree = ({ files, onFileSelect }) => {
           extractedFiles.push({
             name: item.name,
             url: item.url,
-            path: currentPath
+            path: currentPath.join('/') // Join the path array into a string
           });
         } else if (item.type === "folder" && item.contents) {
           extractedFiles = [...extractedFiles, ...extractFiles(item.contents, currentPath)];
@@ -40,17 +40,17 @@ const FolderTree = ({ files, onFileSelect }) => {
     }));
   };
 
-  const handleFileSelect = (url) => {
+  const handleFileSelect = (url, path) => {
     const index = allFiles.findIndex(file => file.url === url);
     setCurrentFileIndex(index);
-    onFileSelect(url);
+    onFileSelect(url, path);
   };
 
   const handlePrevClick = () => {
     if (currentFileIndex > 0) {
       const prevIndex = currentFileIndex - 1;
       setCurrentFileIndex(prevIndex);
-      onFileSelect(allFiles[prevIndex].url);
+      onFileSelect(allFiles[prevIndex].url, allFiles[prevIndex].path);
     }
   };
 
@@ -58,7 +58,7 @@ const FolderTree = ({ files, onFileSelect }) => {
     if (currentFileIndex < allFiles.length - 1) {
       const nextIndex = currentFileIndex + 1;
       setCurrentFileIndex(nextIndex);
-      onFileSelect(allFiles[nextIndex].url);
+      onFileSelect(allFiles[nextIndex].url, allFiles[nextIndex].path);
     }
   };
 
@@ -92,7 +92,7 @@ const FolderTree = ({ files, onFileSelect }) => {
                   ? "bg-[#2E3192] text-white font-bold rounded-md" 
                   : "text-[#787bff] hover:bg-gray-200 hover:text-[#2E3192] rounded-md"
               }`}
-              onClick={() => handleFileSelect(item.url)}
+              onClick={() => handleFileSelect(item.url, item.path)}
               style={{ paddingLeft: `${level * 8}px` }} // Indentation for nested files
             >
               <FileText className="w-4 h-4" />

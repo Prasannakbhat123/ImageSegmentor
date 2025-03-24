@@ -11,6 +11,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const [polygons, setPolygons] = useState({});
   const [selectedPolygon, setSelectedPolygon] = useState(null);
   const [selectedPolygons, setSelectedPolygons] = useState([]);
+  const [fileNames, setFileNames] = useState({});
 
   const handleFileSelect = (fileUrl, filePath) => {
     setSelectedFile({
@@ -26,6 +27,16 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
       setPolygons(prev => ({
         ...prev,
         [fileUrl]: []
+      }));
+    }
+
+    // Set the file name for the selected file
+    if (filePath) {
+      const fileName = filePath.split('/').pop();
+      console.log(`Setting file name for ${fileUrl}: ${fileName}`);
+      setFileNames(prev => ({
+        ...prev,
+        [fileUrl]: fileName // Extract the file name from the file path
       }));
     }
   };
@@ -70,7 +81,8 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
       setSelectedPolygons(prev => [...prev, { ...polygon, fileUrl: selectedFile?.url }]);
     }
     setSelectedPolygon(polygon); // Ensure this polygon is selected
-};
+  };
+
   useEffect(() => {
     if (selectedFile) {
       const currentPolygons = polygons[selectedFile?.url] || [];
@@ -99,7 +111,9 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
     );
 
     return uniquePolygons;
-};
+  };
+
+  console.log("File Names:", fileNames);
 
   return (
     <div className="relative flex flex-col h-screen">
@@ -134,9 +148,11 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           onPolygonSelection={handleProcessPolygons}
           selectedPolygons={selectedPolygons} 
         />
-       <PolygonList 
+        <PolygonList 
           polygons={getAllPolygons()} 
           onPolygonClick={handlePolygonClick}
+          fileNames={fileNames}
+          selectedFile={selectedFile?.url}
         />
       </div>
     </div>

@@ -12,6 +12,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const [selectedPolygon, setSelectedPolygon] = useState(null);
   const [selectedPolygons, setSelectedPolygons] = useState([]);
   const [fileNames, setFileNames] = useState({});
+  const [allPolygons, setAllPolygons] = useState([]);
 
   const handleFileSelect = (fileUrl, filePath) => {
     setSelectedFile({
@@ -60,28 +61,37 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const handlePolygonClick = (polygon) => {
     console.log("Clicked Polygon:", polygon);
 
-    const currentPolygons = polygons[selectedFile?.url] || [];
-    const index = currentPolygons.findIndex(p => p.name === polygon.name);
+    setPolygons(prevPolygons => {
+      const currentPolygons = prevPolygons[selectedFile?.url] || [];
+      const updatedPolygons = [...currentPolygons];
+      
+      const existingIndex = updatedPolygons.findIndex(p => p.name === polygon.name);
+      if (existingIndex === -1) {
+        updatedPolygons.push({ ...polygon, fileUrl: selectedFile?.url });
+      } else {
+        updatedPolygons[existingIndex] = { ...polygon, fileUrl: selectedFile?.url };
+      }
 
-    // Check if the polygon is already in the current polygons list
-    if (index === -1) {
-      console.log("Adding Polygon to Current Image's List:", polygon);
-      const newPolygons = {
-        ...polygons,
-        [selectedFile?.url]: [...currentPolygons, polygon]
+      return {
+        ...prevPolygons,
+        [selectedFile?.url]: updatedPolygons
       };
+    });
 
-      setPolygons(newPolygons);
-    }
+    setAllPolygons(prev => {
+      const existingIndex = prev.findIndex(p => p.name === polygon.name && p.fileUrl === selectedFile?.url);
+      if (existingIndex === -1) {
+        return [...prev, { ...polygon, fileUrl: selectedFile?.url }];
+      } else {
+        return prev.map((p, index) => 
+          index === existingIndex ? { ...polygon, fileUrl: selectedFile?.url } : p
+        );
+      }
+    });
 
-    // Check if the polygon is already selected
-    const isAlreadySelected = selectedPolygons.some(p => p.name === polygon.name && p.fileUrl === selectedFile?.url);
-    if (!isAlreadySelected) {
-      console.log("Selecting Polygon:", polygon);
-      setSelectedPolygons(prev => [...prev, { ...polygon, fileUrl: selectedFile?.url }]);
-    }
-    setSelectedPolygon(polygon); // Ensure this polygon is selected
+    setSelectedPolygon(polygon);
   };
+  
 
   useEffect(() => {
     if (selectedFile) {
@@ -112,6 +122,13 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
 
     return uniquePolygons;
   };
+
+  useEffect(() => {
+    const newAllPolygons = Object.entries(polygons).flatMap(([fileUrl, filePolygons]) =>
+      filePolygons.map(polygon => ({ ...polygon, fileUrl }))
+    );
+    setAllPolygons(newAllPolygons);
+  }, [polygons]);
 
   console.log("File Names:", fileNames);
 
@@ -148,12 +165,12 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           onPolygonSelection={handleProcessPolygons}
           selectedPolygons={selectedPolygons} 
         />
-        <PolygonList 
-          polygons={getAllPolygons()} 
-          onPolygonClick={handlePolygonClick}
-          fileNames={fileNames}
-          selectedFile={selectedFile?.url}
-        />
+    <PolygonList 
+      polygons={allPolygons} 
+      onPolygonClick={handlePolygonClick}
+      fileNames={fileNames}
+      selectedFile={selectedFile?.url}
+    />
       </div>
     </div>
   );

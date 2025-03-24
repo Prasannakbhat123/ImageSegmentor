@@ -4,8 +4,11 @@ const PolygonList = ({ polygons, onPolygonClick, fileNames, selectedFile }) => {
   const [expandedGroups, setExpandedGroups] = useState({});
 
   useEffect(() => {
-    // Automatically open the dropdown for the selected file and close others
-    setExpandedGroups({ [selectedFile]: true });
+    // Automatically open the dropdown for the selected file
+    setExpandedGroups(prev => ({
+      ...prev,
+      [selectedFile]: true
+    }));
   }, [selectedFile]);
 
   const toggleGroup = (fileUrl) => {
@@ -30,16 +33,16 @@ const PolygonList = ({ polygons, onPolygonClick, fileNames, selectedFile }) => {
         Object.keys(groupedPolygons).map((fileUrl) => (
           <div key={fileUrl} className="mb-4">
             <div 
-              className="p-2 bg-gray-200 shadow-md rounded-md cursor-pointer"
+              className={`p-2 ${fileUrl === selectedFile ? 'bg-blue-200' : 'bg-gray-200'} shadow-md rounded-md cursor-pointer`}
               onClick={() => toggleGroup(fileUrl)}
             >
-              <h3 className="text-lg font-semibold text-gray-900">{fileNames[fileUrl]}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{fileNames[fileUrl] || 'Unnamed File'}</h3>
             </div>
             {expandedGroups[fileUrl] && (
               <div className="mt-2">
                 {groupedPolygons[fileUrl].map((polygon, index) => (
                   <div 
-                    key={`${polygon.name}-${polygon.fileUrl}`} 
+                    key={`${polygon.name}-${index}`} 
                     className="mb-2 p-2 bg-white shadow-md rounded-md cursor-pointer"
                     onClick={() => onPolygonClick(polygon)}
                   >

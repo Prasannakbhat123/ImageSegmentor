@@ -60,7 +60,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
 
   const handlePolygonClick = (polygon) => {
     console.log("Clicked Polygon:", polygon);
-
+  
     setPolygons(prevPolygons => {
       const currentPolygons = prevPolygons[selectedFile?.url] || [];
       const updatedPolygons = [...currentPolygons];
@@ -71,13 +71,13 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
       } else {
         updatedPolygons[existingIndex] = { ...polygon, fileUrl: selectedFile?.url };
       }
-
+  
       return {
         ...prevPolygons,
         [selectedFile?.url]: updatedPolygons
       };
     });
-
+  
     setAllPolygons(prev => {
       const existingIndex = prev.findIndex(p => p.name === polygon.name && p.fileUrl === selectedFile?.url);
       if (existingIndex === -1) {
@@ -88,7 +88,18 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
         );
       }
     });
-
+  
+    setSelectedPolygons(prevSelectedPolygons => {
+      const existingIndex = prevSelectedPolygons.findIndex(p => p.name === polygon.name && p.fileUrl === selectedFile?.url);
+      if (existingIndex === -1) {
+        return [...prevSelectedPolygons, { ...polygon, fileUrl: selectedFile?.url }];
+      } else {
+        return prevSelectedPolygons.map((p, index) => 
+          index === existingIndex ? { ...polygon, fileUrl: selectedFile?.url } : p
+        );
+      }
+    });
+  
     setSelectedPolygon(polygon);
   };
   

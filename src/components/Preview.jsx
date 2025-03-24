@@ -98,30 +98,26 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     
     const ctx = canvas.getContext('2d');
     const img = imageRef.current;
-
+  
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
+  
     const scaleX = canvas.width / img.naturalWidth;
     const scaleY = canvas.height / img.naturalHeight;
-
+  
     const currentPolygons = polygons[file] || [];
     const selectedPolygonsForFile = selectedPolygons.filter(p => p.fileUrl === file);
-
-
-  //   console.log("Current Polygons:", currentPolygons);
-  // console.log("Selected Polygons for File:", selectedPolygonsForFile);
-
+  
     // Draw all polygons for the current file
     currentPolygons.forEach((polygon, index) => {
       console.log("Drawing Polygon:", polygon.name);
       ctx.beginPath();
-
+  
       const scaledPoints = polygon.points.map(point => ({
         x: point.x * scaleX,
         y: point.y * scaleY
       }));
-
+  
       // Highlight selected polygon
       if (selectedPolygonsForFile.find(p => p.name === polygon.name)) {
         ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
@@ -130,9 +126,9 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
         ctx.strokeStyle = 'rgba(0, 100, 255, 0.7)';
         ctx.fillStyle = 'rgba(0, 0, 0, 0)';
       }
-
+  
       ctx.lineWidth = 2;
-
+  
       scaledPoints.forEach((point, index) => {
         if (index === 0) {
           ctx.moveTo(point.x, point.y);
@@ -140,18 +136,18 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
           ctx.lineTo(point.x, point.y);
         }
       });
-
+  
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-
+  
       scaledPoints.forEach((point) => {
         ctx.beginPath();
         ctx.fillStyle = 'red';
         ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
         ctx.fill();
       });
-
+  
       // Draw label and group
       if (polygon.name) {
         const firstPoint = scaledPoints[0];
@@ -161,77 +157,77 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
         const padding = 4;
         const rectWidth = textWidth + padding * 2;
         const rectHeight = 20;
-
+  
         ctx.fillStyle = 'rgba(0, 100, 255, 0.7)';
         ctx.fillRect(firstPoint.x, firstPoint.y - rectHeight - 5, rectWidth, rectHeight);
-
+  
         ctx.fillStyle = 'white';
         ctx.fillText(`${polygon.name} (${polygon.group})`, firstPoint.x + padding, firstPoint.y - 10);
       }
     });
-
+  
     // Draw selected polygons that are not part of the current polygons array
-  selectedPolygonsForFile.forEach((polygon) => {
-    console.log("Drawing Selected Polygon:", polygon.name);
-    if (!currentPolygons.find(p => p.name === polygon.name)) {
-      const scaledPoints = polygon.points.map(point => ({
-        x: point.x * scaleX,
-        y: point.y * scaleY
-      }));
-
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
-      ctx.lineWidth = 2;
-
-      scaledPoints.forEach((point, index) => {
-        if (index === 0) {
-          ctx.moveTo(point.x, point.y);
-        } else {
-          ctx.lineTo(point.x, point.y);
-        }
-      });
-
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-      ctx.fill();
-      ctx.stroke();
-
-      scaledPoints.forEach((point) => {
+    selectedPolygonsForFile.forEach((polygon) => {
+      console.log("Drawing Selected Polygon:", polygon.name);
+      if (!currentPolygons.find(p => p.name === polygon.name)) {
+        const scaledPoints = polygon.points.map(point => ({
+          x: point.x * scaleX,
+          y: point.y * scaleY
+        }));
+  
         ctx.beginPath();
-        ctx.fillStyle = 'blue';
-        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.lineWidth = 2;
+  
+        scaledPoints.forEach((point, index) => {
+          if (index === 0) {
+            ctx.moveTo(point.x, point.y);
+          } else {
+            ctx.lineTo(point.x, point.y);
+          }
+        });
+  
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
         ctx.fill();
-      });
-
-      // Draw label and group
-      if (polygon.name) {
-        const firstPoint = scaledPoints[0];
-        ctx.font = '12px Arial';
-        ctx.fillStyle = 'white';
-        const textWidth = ctx.measureText(`${polygon.name} (${polygon.group})`).width;
-        const padding = 4;
-        const rectWidth = textWidth + padding * 2;
-        const rectHeight = 20;
-
-        ctx.fillStyle = 'rgba(0, 100, 255, 0.7)';
-        ctx.fillRect(firstPoint.x, firstPoint.y - rectHeight - 5, rectWidth, rectHeight);
-
-        ctx.fillStyle = 'white';
-        ctx.fillText(`${polygon.name} (${polygon.group})`, firstPoint.x + padding, firstPoint.y - 10);
+        ctx.stroke();
+  
+        scaledPoints.forEach((point) => {
+          ctx.beginPath();
+          ctx.fillStyle = 'blue';
+          ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+  
+        // Draw label and group
+        if (polygon.name) {
+          const firstPoint = scaledPoints[0];
+          ctx.font = '12px Arial';
+          ctx.fillStyle = 'white';
+          const textWidth = ctx.measureText(`${polygon.name} (${polygon.group})`).width;
+          const padding = 4;
+          const rectWidth = textWidth + padding * 2;
+          const rectHeight = 20;
+  
+          ctx.fillStyle = 'rgba(0, 100, 255, 0.7)';
+          ctx.fillRect(firstPoint.x, firstPoint.y - rectHeight - 5, rectWidth, rectHeight);
+  
+          ctx.fillStyle = 'white';
+          ctx.fillText(`${polygon.name} (${polygon.group})`, firstPoint.x + padding, firstPoint.y - 10);
+        }
       }
-    }
-  });
-
+    });
+  
     if (currentPolygon.length > 0) {
       ctx.beginPath();
       const scaledCurrentPolygon = currentPolygon.map(point => ({
         x: point.x * scaleX,
         y: point.y * scaleY
       }));
-
+  
       ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
       ctx.lineWidth = 2;
-
+  
       scaledCurrentPolygon.forEach((point, index) => {
         if (index === 0) {
           ctx.moveTo(point.x, point.y);
@@ -239,14 +235,14 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
           ctx.lineTo(point.x, point.y);
         }
       });
-
+  
       scaledCurrentPolygon.forEach((point) => {
         ctx.beginPath();
         ctx.fillStyle = 'blue';
         ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
         ctx.fill();
       });
-
+  
       ctx.stroke();
     }
   };

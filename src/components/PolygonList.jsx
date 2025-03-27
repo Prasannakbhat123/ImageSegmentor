@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-const PolygonList = ({ polygons, onPolygonClick, fileNames, selectedFile }) => {
+const PolygonList = ({ polygons, onPolygonClick, fileNames, selectedFile, selectedPolygon }) => {
   const [expandedGroups, setExpandedGroups] = useState({});
 
   useEffect(() => {
-    // Automatically open the dropdown for the selected file
-    setExpandedGroups(prev => ({
-      ...prev,
+    // Automatically open the dropdown for the selected file and close others
+    setExpandedGroups({
       [selectedFile]: true
-    }));
+    });
   }, [selectedFile]);
 
   const toggleGroup = (fileUrl) => {
@@ -27,7 +26,7 @@ const PolygonList = ({ polygons, onPolygonClick, fileNames, selectedFile }) => {
   }, {});
 
   return (
-    <div className="w-1/4 bg-gray-100 p-4 h-full overflow-y-auto shadow-lg">
+    <div className="w-1/4 max-h-[90vh] bg-gray-100 p-4 h-full overflow-y-auto shadow-lg">
       <h2 className="text-xl font-bold mb-4 text-center text-black">Polygons</h2>
       {Object.keys(groupedPolygons).length > 0 ? (
         Object.keys(groupedPolygons).map((fileUrl) => (
@@ -43,7 +42,7 @@ const PolygonList = ({ polygons, onPolygonClick, fileNames, selectedFile }) => {
                 {groupedPolygons[fileUrl].map((polygon, index) => (
                   <div 
                     key={`${polygon.name}-${index}`} 
-                    className="mb-2 p-2 bg-white shadow-md rounded-md cursor-pointer"
+                    className={`mb-2 p-2 shadow-md rounded-md cursor-pointer ${selectedPolygon?.name === polygon.name && selectedPolygon?.fileUrl === polygon.fileUrl ? 'bg-blue-100' : 'bg-white'}`}
                     onClick={() => onPolygonClick(polygon)}
                   >
                     <h4 className="text-md font-semibold text-gray-900">{polygon.name}</h4>

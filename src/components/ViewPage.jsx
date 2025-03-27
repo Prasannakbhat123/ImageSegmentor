@@ -176,12 +176,13 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           onPolygonSelection={handleProcessPolygons}
           selectedPolygons={selectedPolygons} 
         />
-    <PolygonList 
-      polygons={allPolygons} 
-      onPolygonClick={handlePolygonClick}
-      fileNames={fileNames}
-      selectedFile={selectedFile?.url}
-    />
+<PolygonList 
+  polygons={allPolygons} 
+  onPolygonClick={handlePolygonClick}
+  fileNames={fileNames}
+  selectedFile={selectedFile?.url}
+  selectedPolygon={selectedPolygon} // Pass the selectedPolygon prop
+/>
       </div>
     </div>
   );

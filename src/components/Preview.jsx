@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 
-const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygons, selectedPolygon, setSelectedPolygon, onPolygonSelection, selectedPolygons, onRedrawCanvas  }) => {
+const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygons, selectedPolygon, setSelectedPolygon, onPolygonSelection, selectedPolygons, onRedrawCanvas, onExportPolygons }) => {
   const [polygons, setPolygons] = useState({});
   const [currentPolygon, setCurrentPolygon] = useState([]);
   const [selectedPointIndex, setSelectedPointIndex] = useState(null);
@@ -683,8 +683,11 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     setPolygonGroup("1");
     setTempPolygon(null);
     redrawCanvas(selectedFile);
+    
+    // This will trigger the useEffect in ViewPage to automatically update the JSON
     onUpdatePolygons(updatedPolygons);
   };
+
   return (
     <div className="w-10/12 flex flex-col justify-center items-center bg-[#fff] p-6 shadow-xl">
       {selectedFile ? (
@@ -716,6 +719,12 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
               className="bg-[#2E3192] rounded-full text-white px-8 py-2 hover:bg-[#1a1c4a] transition"
             >
               Join
+            </button>
+            <button
+              onClick={onExportPolygons}
+              className="bg-[#2E3192] rounded-full text-white px-8 py-2 hover:bg-[#1a1c4a] transition"
+            >
+              View JSON
             </button>
           </div>
         </div>

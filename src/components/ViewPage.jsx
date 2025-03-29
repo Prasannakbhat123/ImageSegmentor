@@ -4,6 +4,7 @@ import FolderTree from "./FolderTree";
 import Preview from "./Preview";
 import PolygonList from "./PolygonList";
 import logo from '../assets/IGlogo.png';
+import JsonStorageService from "../services/JsonStorageService";
 
 const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -13,6 +14,8 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   const [selectedPolygons, setSelectedPolygons] = useState([]);
   const [fileNames, setFileNames] = useState({});
   const [allPolygons, setAllPolygons] = useState([]);
+  const [jsonDataPreview, setJsonDataPreview] = useState(null);
+  const [showJsonModal, setShowJsonModal] = useState(false);
 
   const handleFileSelect = (fileUrl, filePath) => {
     setSelectedFile({
@@ -141,6 +144,52 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
     setAllPolygons(newAllPolygons);
   }, [polygons]);
 
+  // Keep only one useEffect for auto-saving to avoid duplicates
+  useEffect(() => {
+    if (selectedFile?.url && fileNames[selectedFile.url]) {
+      const imagePolygons = polygons[selectedFile.url] || [];
+      const fileName = fileNames[selectedFile.url];
+      
+      if (imagePolygons.length > 0) {
+        // Auto-save to JSON file named after the image
+        const savedData = JsonStorageService.savePolygonData(fileName, selectedFile.url, imagePolygons);
+        console.log(`Auto-saved polygon data for ${fileName} with ${imagePolygons.length} polygons`);
+      }
+    }
+  }, [polygons, selectedFile, fileNames]);
+
+  const viewJsonData = () => {
+    if (!selectedFile?.url) {
+      alert("Please select a file first");
+      return;
+    }
+    
+    const fileName = fileNames[selectedFile.url] || 'unnamed-file';
+    const imagePolygons = polygons[selectedFile.url] || [];
+    
+    if (imagePolygons.length === 0) {
+      alert("No polygons to view for this image.");
+      return;
+    }
+    
+    // Get the JSON data that was already saved automatically
+    const baseFileName = fileName.split('.')[0];
+    const savedData = JsonStorageService.getPolygonData(fileName);
+    
+    if (!savedData) {
+      alert("No saved data found for this image.");
+      return;
+    }
+    
+    // Show JSON data in modal
+    setJsonDataPreview({
+      ...savedData,
+      jsonFileName: `${baseFileName}.json`, 
+      path: `${JsonStorageService.jsonFolderPath}${baseFileName}.json`
+    });
+    setShowJsonModal(true);
+  };
+
   console.log("File Names:", fileNames);
 
   return (
@@ -175,6 +224,7 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
           setSelectedPolygon={setSelectedPolygon}
           onPolygonSelection={handleProcessPolygons}
           selectedPolygons={selectedPolygons} 
+          onExportPolygons={viewJsonData}
         />
 <PolygonList 
   polygons={allPolygons} 
@@ -184,6 +234,46 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   selectedPolygon={selectedPolygon} // Pass the selectedPolygon prop
 />
       </div>
+      {/* JSON Data Preview Modal - Updated to reflect that data is already saved */}
+      {showJsonModal && jsonDataPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-3/4 h-3/4 overflow-auto">
+            <h3 className="text-xl font-bold mb-4">
+              <span className="text-green-600 mr-2">✓</span>
+              JSON File: <span className="text-blue-600">{jsonDataPreview.jsonFileName}</span>
+            </h3>
+            <p className="text-sm text-gray-600 mb-1">
+              Path: {jsonDataPreview.path}
+            </p>
+            <p className="text-sm text-green-600 mb-4 italic">
+              This file is automatically updated whenever polygons are created or modified.
+            </p>
+            
+            <div className="mb-4">
+              <h4 className="text-lg font-semibold">Text Format:</h4>
+              <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-60">
+                {JsonStorageService.convertToText(jsonDataPreview)}
+              </pre>
+            </div>
+            
+            <div className="mb-4">
+              <h4 className="text-lg font-semibold">JSON Format:</h4>
+              <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-60">
+                {JSON.stringify(jsonDataPreview, null, 2)}
+              </pre>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={closeJsonModal}
+                className="px-4 py-2 bg-[#2E3192] text-white rounded-md hover:bg-[#1a1c4a]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

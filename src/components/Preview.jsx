@@ -79,6 +79,56 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
       }
     }
   }, [currentPolygon, polygons, selectedFile, selectedPolygon]);
+
+  useEffect(() => {
+    // Update local polygon state when selectedPolygons changes or when polygons are edited/deleted
+    if (selectedFile) {
+      const currentFilePolygons = selectedPolygons.filter(p => p.fileUrl === selectedFile);
+      setPolygons(prevPolygons => ({
+        ...prevPolygons,
+        [selectedFile]: currentFilePolygons
+      }));
+      
+      // Force redraw whenever the polygon data changes
+      if (canvasRef.current) {
+        redrawCanvas(selectedFile);
+      }
+    }
+  }, [selectedFile, selectedPolygons]);
+
+  // This will catch any changes to the selectedPolygon from the parent (edit/delete operations)
+  useEffect(() => {
+    if (selectedFile && selectedPolygon) {
+      redrawCanvas(selectedFile);
+    }
+  }, [selectedPolygon]);
+  
+  // This effect will respond to any changes in the selectedPolygons array
+  useEffect(() => {
+    if (selectedFile) {
+      const currentFilePolygons = selectedPolygons.filter(p => p.fileUrl === selectedFile);
+      
+      // Update the local polygons state
+      setPolygons(prevPolygons => ({
+        ...prevPolygons,
+        [selectedFile]: currentFilePolygons
+      }));
+      
+      // Force redraw the canvas with the latest data
+      if (canvasRef.current) {
+        console.log(`Redrawing canvas with ${currentFilePolygons.length} polygons due to selectedPolygons change`);
+        redrawCanvas(selectedFile);
+      }
+    }
+  }, [selectedFile, selectedPolygons]);
+
+  // Add an effect specifically for handling polygon edits
+  useEffect(() => {
+    if (selectedFile && selectedPolygon) {
+      console.log(`Selected polygon changed: ${selectedPolygon.name}, redrawing...`);
+      redrawCanvas(selectedFile);
+    }
+  }, [selectedPolygon]);
   
   const drawImageOnly = () => {
     const canvas = canvasRef.current;
@@ -92,7 +142,7 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
   };
 
   const redrawCanvas = (file) => {
-    console.log("Redrawing Canvas for File:", file);
+    console.log(`Redrawing Canvas for File: ${file}`);
     const canvas = canvasRef.current;
     if (!canvas) return;
     
@@ -104,13 +154,43 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
   
     const scaleX = canvas.width / img.naturalWidth;
     const scaleY = canvas.height / img.naturalHeight;
+    
+    // FIX: Debug the polygons that should be displayed
+    console.log("All polygons:", selectedPolygons.map(p => ({ name: p.name, fileUrl: p.fileUrl })));
+    
+    // FIX: Changed filtering to be more permissive if fileUrl doesn't match exactly
+    const currentFilePolygons = selectedPolygons.filter(p => {
+      // Accept exact matches or if fileUrl is the current file or ends with the current file
+      const matches = p.fileUrl === file || 
+                     (typeof p.fileUrl === 'string' && p.fileUrl.endsWith(file)) ||
+                     (p.fileUrl?.url === file);
+      
+      if (!matches) {
+        console.log(`Skipping polygon "${p.name}" because it belongs to file "${p.fileUrl}" not "${file}"`);
+      } else {
+        console.log(`Including polygon "${p.name}" for file "${file}"`);
+      }
+      return matches;
+    });
+    
+    console.log(`Drawing ${currentFilePolygons.length} polygons for ${file}`);
+    
+    // Group colors (matching PolygonList)
+    const groupColors = {
+      "1": "#FF5733", // Red-orange
+      "2": "#33A1FF", // Blue
+      "3": "#33FF57", // Green
+      "4": "#F033FF", // Purple
+      "5": "#FFD700"  // Gold
+    };
   
-    const currentPolygons = polygons[file] || [];
-    const selectedPolygonsForFile = selectedPolygons.filter(p => p.fileUrl === file);
+    const getColorForGroup = (group) => {
+      return groupColors[group] || "#9C9C9C"; // Default gray if not found
+    };
   
     // Draw all polygons for the current file
-    currentPolygons.forEach((polygon, index) => {
-      console.log("Drawing Polygon:", polygon.name);
+    currentFilePolygons.forEach((polygon, index) => {
+      console.log(`Drawing Polygon: ${polygon.name} (Group: ${polygon.group})`);
       ctx.beginPath();
   
       const scaledPoints = polygon.points.map(point => ({
@@ -118,13 +198,21 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
         y: point.y * scaleY
       }));
   
+      const isSelected = selectedPolygon && selectedPolygon.name === polygon.name;
+      const polygonColor = getColorForGroup(polygon.group);
+      
       // Highlight selected polygon
-      if (selectedPolygonsForFile.find(p => p.name === polygon.name)) {
+      if (isSelected) {
         ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; // Semi-transparent red fill
       } else {
-        ctx.strokeStyle = 'rgba(0, 100, 255, 0.7)';
-        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+        ctx.strokeStyle = polygonColor;
+        // Ensure fill is semi-transparent (0.3 opacity)
+        const colorWithoutParens = polygonColor.replace('#', '');
+        const r = parseInt(colorWithoutParens.substr(0, 2), 16);
+        const g = parseInt(colorWithoutParens.substr(2, 2), 16);
+        const b = parseInt(colorWithoutParens.substr(4, 2), 16);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`; // Ensure semi-transparency
       }
   
       ctx.lineWidth = 2;
@@ -143,12 +231,12 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
   
       scaledPoints.forEach((point) => {
         ctx.beginPath();
-        ctx.fillStyle = 'red';
+        ctx.fillStyle = isSelected ? 'red' : polygonColor;
         ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
         ctx.fill();
       });
   
-      // Draw label and group
+      // Draw label and group with polygon color
       if (polygon.name) {
         const firstPoint = scaledPoints[0];
         ctx.font = '12px Arial';
@@ -158,7 +246,7 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
         const rectWidth = textWidth + padding * 2;
         const rectHeight = 20;
   
-        ctx.fillStyle = 'rgba(0, 100, 255, 0.7)';
+        ctx.fillStyle = isSelected ? 'rgba(255, 0, 0, 0.7)' : polygonColor;
         ctx.fillRect(firstPoint.x, firstPoint.y - rectHeight - 5, rectWidth, rectHeight);
   
         ctx.fillStyle = 'white';
@@ -167,9 +255,9 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     });
   
     // Draw selected polygons that are not part of the current polygons array
-    selectedPolygonsForFile.forEach((polygon) => {
+    selectedPolygons.forEach((polygon) => {
       console.log("Drawing Selected Polygon:", polygon.name);
-      if (!currentPolygons.find(p => p.name === polygon.name)) {
+      if (!currentFilePolygons.find(p => p.name === polygon.name)) {
         const scaledPoints = polygon.points.map(point => ({
           x: point.x * scaleX,
           y: point.y * scaleY
@@ -666,13 +754,21 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     // Use either the selected predefined shape or the custom name
     const finalName = polygonName === "Custom" ? customName : polygonName;
     
+    // FIX: Make sure the fileUrl is stored correctly
+    const newPolygon = {
+      name: finalName || predefinedShapes[0],
+      group: polygonGroup || "1",
+      points: tempPolygon,
+      fileUrl: selectedFile, // This should match the format expected by the filter
+      id: Date.now().toString()
+    };
+    
+    console.log(`Creating new polygon "${newPolygon.name}" for file "${selectedFile}"`);
+    console.log("New polygon data:", newPolygon);
+    
     const updatedPolygons = {
       ...polygons,
-      [selectedFile]: [...(polygons[selectedFile] || []), {
-        name: finalName || predefinedShapes[0],
-        group: polygonGroup || "1",
-        points: tempPolygon
-      }]
+      [selectedFile]: [...(polygons[selectedFile] || []), newPolygon]
     };
 
     setPolygons(updatedPolygons);
@@ -682,10 +778,21 @@ const Preview = ({ selectedFile, currentTool, onProcessPolygons, onUpdatePolygon
     setCustomName("");
     setPolygonGroup("1");
     setTempPolygon(null);
-    redrawCanvas(selectedFile);
     
-    // This will trigger the useEffect in ViewPage to automatically update the JSON
+    // FIX: Ensure we're passing the polygon to the parent component correctly
     onUpdatePolygons(updatedPolygons);
+    
+    // FIX: Also update selectedPolygons directly to ensure immediate visibility
+    const newPolygonWithFileUrl = { ...newPolygon, fileUrl: selectedFile };
+    setPolygons(prevPolygons => ({
+      ...prevPolygons,
+      [selectedFile]: [...(prevPolygons[selectedFile] || []), newPolygonWithFileUrl]
+    }));
+    
+    // Force redraw
+    setTimeout(() => {
+      redrawCanvas(selectedFile);
+    }, 100);
   };
 
   return (

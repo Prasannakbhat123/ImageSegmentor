@@ -55,10 +55,42 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   };
 
   const handleUpdatePolygons = (updatedPolygons) => {
-    setPolygons(prevPolygons => ({
-      ...prevPolygons,
-      ...updatedPolygons
-    }));
+    console.log("Updating polygons:", Object.keys(updatedPolygons));
+    
+    // Ensure we're maintaining the correct fileUrl for each polygon
+    const validatedUpdate = {};
+    
+    Object.entries(updatedPolygons).forEach(([fileUrl, filePolygons]) => {
+      validatedUpdate[fileUrl] = filePolygons.map(poly => {
+        // FIX: Ensure fileUrl is set consistently
+        const polygonWithFileUrl = {
+          ...poly,
+          fileUrl: poly.fileUrl || fileUrl
+        };
+        console.log(`Updated polygon "${polygonWithFileUrl.name}" with fileUrl: ${polygonWithFileUrl.fileUrl}`);
+        return polygonWithFileUrl;
+      });
+    });
+    
+    // FIX: Update all states to ensure consistency
+    setPolygons(prevPolygons => {
+      const newPolygons = {
+        ...prevPolygons,
+        ...validatedUpdate
+      };
+      
+      // This will ensure selectedPolygons gets updated in the next useEffect
+      setTimeout(() => {
+        const allPolygonsList = Object.entries(newPolygons).flatMap(([fileUrl, polys]) => 
+          polys.map(p => ({ ...p, fileUrl: p.fileUrl || fileUrl }))
+        );
+        
+        setSelectedPolygons(allPolygonsList);
+        setAllPolygons(allPolygonsList);
+      }, 0);
+      
+      return newPolygons;
+    });
   };
 
   const handlePolygonClick = (polygon) => {
@@ -144,6 +176,47 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
     setAllPolygons(newAllPolygons);
   }, [polygons]);
 
+  useEffect(() => {
+    // Update allPolygons whenever polygons change, ensuring fileUrl is set
+    const newAllPolygons = Object.entries(polygons).flatMap(([fileUrl, filePolygons]) =>
+      filePolygons.map(polygon => ({ 
+        ...polygon, 
+        fileUrl: polygon.fileUrl || fileUrl // Ensure fileUrl is set
+      }))
+    );
+    
+    console.log(`Updated allPolygons array: ${newAllPolygons.length} polygons total`);
+    
+    // Validate that each polygon has the correct fileUrl to prevent cross-image display
+    const validatedPolygons = newAllPolygons.filter(p => {
+      if (!p.fileUrl) {
+        console.warn(`Found polygon "${p.name}" without fileUrl - it will be excluded`);
+        return false;
+      }
+      return true;
+    });
+    
+    setAllPolygons(validatedPolygons);
+  }, [polygons]);
+
+  useEffect(() => {
+    // Update allPolygons and selectedPolygons whenever polygons change
+    const newAllPolygons = Object.entries(polygons).flatMap(([fileUrl, filePolygons]) => 
+      filePolygons.map(polygon => {
+        const updatedPolygon = { 
+          ...polygon, 
+          fileUrl: polygon.fileUrl || fileUrl
+        };
+        return updatedPolygon;
+      })
+    );
+    
+    console.log(`Updated polygon arrays: ${newAllPolygons.length} polygons total`);
+    
+    setAllPolygons(newAllPolygons);
+    setSelectedPolygons(newAllPolygons); // Ensure both arrays have the same data
+  }, [polygons]);
+
   // Keep only one useEffect for auto-saving to avoid duplicates
   useEffect(() => {
     if (selectedFile?.url && fileNames[selectedFile.url]) {
@@ -190,6 +263,122 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
     setShowJsonModal(true);
   };
 
+const handleEditPolygon = (updatedPolygon) => {
+  if (!selectedFile?.url || !updatedPolygon) return;
+  
+  const fileUrl = selectedFile.url;
+  
+  // Store original name for reference (to find it in arrays)
+  const originalName = updatedPolygon.originalName || updatedPolygon.name;
+  
+  // Create an updated polygon with a timestamp to force re-render
+  const newPolygon = {
+    ...updatedPolygon,
+    _timestamp: Date.now(),  // Add timestamp to force React to recognize the change
+    fileUrl: fileUrl         // Ensure fileUrl is set
+  };
+  
+  // Update in main polygons state
+  setPolygons(prevPolygons => {
+    const currentFilePolygons = [...(prevPolygons[fileUrl] || [])];
+    
+    // Find by original name
+    const polyIndex = currentFilePolygons.findIndex(p => p.name === originalName);
+    
+    if (polyIndex >= 0) {
+      currentFilePolygons[polyIndex] = newPolygon;
+      console.log(`Updated polygon at index ${polyIndex}: ${originalName} → ${newPolygon.name}`);
+    } else {
+      console.warn(`Could not find polygon with name "${originalName}" to update`);
+    }
+    
+    return {
+      ...prevPolygons,
+      [fileUrl]: currentFilePolygons
+    };
+  });
+  
+  // Update selected polygon if it's the one being edited
+  if (selectedPolygon && selectedPolygon.name === originalName) {
+    console.log(`Updating selected polygon: ${originalName} → ${newPolygon.name}`);
+    setSelectedPolygon(newPolygon);
+  }
+  
+  // Update in allPolygons
+  setAllPolygons(prev => {
+    return prev.map(p => {
+      if (p.name === originalName && p.fileUrl === fileUrl) {
+        console.log(`Updated in allPolygons: ${p.name} → ${newPolygon.name}`);
+        return newPolygon;
+      }
+      return p;
+    });
+  });
+  
+  // Update in selectedPolygons
+  setSelectedPolygons(prev => {
+    return prev.map(p => {
+      if (p.name === originalName && p.fileUrl === fileUrl) {
+        console.log(`Updated in selectedPolygons: ${p.name} → ${newPolygon.name}`);
+        return newPolygon;
+      }
+      return p;
+    });
+  });
+  
+  // Force refresh after a short delay to ensure state updates are processed
+  setTimeout(() => {
+    console.log("Forced refresh after edit");
+    setPolygons(prev => ({...prev}));
+  }, 100);
+};
+
+  const handleDeletePolygon = (polygonToDelete) => {
+    if (!selectedFile?.url || !polygonToDelete) return;
+    
+    const fileUrl = selectedFile.url;
+    const polygonName = polygonToDelete.name;
+    
+    console.log(`Deleting polygon: ${polygonName} from ${fileUrl}`);
+    
+    // First update the main polygons state
+    setPolygons(prevPolygons => {
+      const currentPolygons = [...(prevPolygons[fileUrl] || [])];
+      const filteredPolygons = currentPolygons.filter(p => p.name !== polygonName);
+      
+      console.log(`Removed polygon from main state. Before: ${currentPolygons.length}, After: ${filteredPolygons.length}`);
+      
+      return {
+        ...prevPolygons,
+        [fileUrl]: filteredPolygons
+      };
+    });
+    
+    // If the deleted polygon was selected, clear selection
+    if (selectedPolygon?.name === polygonName) {
+      setSelectedPolygon(null);
+    }
+    
+    // Remove from allPolygons
+    setAllPolygons(prev => {
+      const filtered = prev.filter(p => !(p.name === polygonName && p.fileUrl === fileUrl));
+      console.log(`Removed from allPolygons. Before: ${prev.length}, After: ${filtered.length}`);
+      return filtered;
+    });
+    
+    // Remove from selectedPolygons
+    setSelectedPolygons(prev => {
+      const filtered = prev.filter(p => !(p.name === polygonName && p.fileUrl === fileUrl));
+      console.log(`Removed from selectedPolygons. Before: ${prev.length}, After: ${filtered.length}`);
+      return filtered;
+    });
+  };
+  
+  const closeJsonModal = () => {
+    setShowJsonModal(false);
+    setJsonDataPreview(null);
+  };
+
   console.log("File Names:", fileNames);
 
   return (
@@ -232,6 +421,8 @@ const ViewPage = ({ uploadedFiles, setViewMode }) => {
   fileNames={fileNames}
   selectedFile={selectedFile?.url}
   selectedPolygon={selectedPolygon} // Pass the selectedPolygon prop
+  onEditPolygon={handleEditPolygon}
+  onDeletePolygon={handleDeletePolygon}
 />
       </div>
       {/* JSON Data Preview Modal - Updated to reflect that data is already saved */}
